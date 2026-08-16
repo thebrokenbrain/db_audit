@@ -1,0 +1,8 @@
+name: 'Database Audit'
+type: module
+description: 'Audita las queries que Drupal envía a la base de datos: conteo por ruta, atribución al módulo responsable, detección de N+1 y duplicados, y estimación del coste atribuible a la latencia de red (cross-AZ).'
+package: 'Development'
+core_version_requirement: ^10.3 || ^11
+configure: db_audit.settings
+dependencies:
+  - drupal:mysql

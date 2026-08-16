@@ -1,0 +1,35 @@
+db_audit.overview:
+  title: 'Resumen'
+  route_name: db_audit.overview
+  base_route: db_audit.overview
+  weight: 0
+
+db_audit.findings:
+  title: 'Hallazgos'
+  route_name: db_audit.findings
+  base_route: db_audit.overview
+  weight: 10
+
+db_audit.queries:
+  title: 'Consultas'
+  route_name: db_audit.queries
+  base_route: db_audit.overview
+  weight: 20
+
+db_audit.modules:
+  title: 'Por módulo'
+  route_name: db_audit.modules
+  base_route: db_audit.overview
+  weight: 30
+
+db_audit.requests:
+  title: 'Requests'
+  route_name: db_audit.requests
+  base_route: db_audit.overview
+  weight: 40
+
+db_audit.diagnostics:
+  title: 'Conexión'
+  route_name: db_audit.diagnostics
+  base_route: db_audit.overview
+  weight: 50

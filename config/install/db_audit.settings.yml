@@ -1,0 +1,39 @@
+# Umbrales de análisis y opciones de almacenamiento.
+#
+# El interruptor de captura NO está aquí: vive en settings.php (y en la
+# variable de entorno DB_AUDIT_ENABLED), porque el driver instrumentado
+# empieza a registrar antes de que exista la configuración de Drupal.
+
+# Repeticiones de la misma consulta desde el mismo punto del código a partir de
+# las cuales se considera un patrón N+1.
+n_plus_one_threshold: 10
+
+# Milisegundos a partir de los cuales una consulta se considera lenta de
+# verdad, es decir, con tiempo de ejecución en el servidor y no sólo latencia.
+slow_query_ms: 50
+
+# Consultas por request a partir de las cuales se avisa por volumen.
+high_query_count: 150
+
+# Filas medias devueltas a partir de las cuales se avisa por tamaño.
+large_resultset: 500
+
+# Guardar el detalle de consultas agregadas, además del resumen del request.
+store_queries: true
+
+# Máximo de consultas agregadas que se guardan por request, ordenadas por
+# número de ejecuciones.
+max_stored_queries: 200
+
+# No guardar requests con menos de este número de consultas.
+min_queries_to_store: 1
+
+# Publicar las cabeceras X-DbAudit-* en la respuesta.
+expose_headers: false
+
+# Días de retención para la purga automática.
+retention_days: 7
+
+# Excluir del informe las propias páginas del módulo, que si no compiten con
+# las rutas reales del sitio.
+exclude_own_routes: true

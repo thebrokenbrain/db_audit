@@ -1,0 +1,64 @@
+db_audit.overview:
+  path: '/admin/reports/db-audit'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::overview'
+    _title: 'Auditoría de base de datos'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.findings:
+  path: '/admin/reports/db-audit/findings'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::findings'
+    _title: 'Hallazgos'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.queries:
+  path: '/admin/reports/db-audit/queries'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::queries'
+    _title: 'Consultas'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.modules:
+  path: '/admin/reports/db-audit/modules'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::modules'
+    _title: 'Por módulo'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.requests:
+  path: '/admin/reports/db-audit/requests'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::requests'
+    _title: 'Requests'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.request_detail:
+  path: '/admin/reports/db-audit/request/{request_id}'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::requestDetail'
+    _title: 'Detalle del request'
+  requirements:
+    _permission: 'view db audit reports'
+    request_id: '[0-9a-f]{16,32}'
+
+db_audit.diagnostics:
+  path: '/admin/reports/db-audit/diagnostics'
+  defaults:
+    _controller: '\Drupal\db_audit\Controller\ReportController::diagnostics'
+    _title: 'Diagnóstico de conexión'
+  requirements:
+    _permission: 'view db audit reports'
+
+db_audit.settings:
+  path: '/admin/config/development/db-audit'
+  defaults:
+    _form: '\Drupal\db_audit\Form\SettingsForm'
+    _title: 'Auditoría de base de datos'
+  requirements:
+    _permission: 'administer db audit'

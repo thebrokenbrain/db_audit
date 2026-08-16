@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * @file
+ * Auditoría de las consultas que Drupal envía a la base de datos.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Routing\RouteMatchInterface;
+
+/**
+ * Implements hook_help().
+ */
+function db_audit_help(string $route_name, RouteMatchInterface $route_match): string {
+  if ($route_name !== 'help.page.db_audit') {
+    return '';
+  }
+
+  $output = '<h2>' . t('Para qué sirve') . '</h2>';
+  $output .= '<p>' . t('Captura todas las consultas que el sitio envía a la base de datos, las atribuye al módulo y a la línea de código que las lanza, y señala los patrones que cuestan tiempo: N+1, consultas idénticas repetidas, consultas lentas y tráfico contra tablas que deberían estar servidas desde otro sitio.') . '</p>';
+
+  $output .= '<h2>' . t('Cómo se leen los resultados') . '</h2>';
+  $output .= '<p>' . t('El módulo mide primero cuánto cuesta un ida y vuelta a la base de datos (RTT). Con ese número, cada hallazgo se traduce a milisegundos recuperables por request, que es el criterio para decidir qué merece la pena tocar.') . '</p>';
+  $output .= '<p>' . t('Cuando la aplicación y la base de datos están en zonas de disponibilidad distintas, lo que suele dominar el tiempo no es la complejidad del SQL sino el número de consultas: una consulta que el servidor resuelve en 0,05 ms cuesta 1,05 ms si el RTT es de 1 ms. Si el informe indica que la mayor parte del tiempo es red, la vía de mejora es reducir el número de consultas, no optimizarlas una a una.') . '</p>';
+
+  $output .= '<h2>' . t('Activación') . '</h2>';
+  $output .= '<p>' . t('La captura requiere apuntar la conexión al driver instrumentado en settings.php. Consulta el README del módulo. El interruptor de encendido vive en settings.php y en la variable de entorno DB_AUDIT_ENABLED, no en esta configuración, porque la captura empieza antes de que Drupal cargue su configuración.') . '</p>';
+
+  return $output;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function db_audit_cron(): void {
+  $days = (int) (\Drupal::config('db_audit.settings')->get('retention_days') ?? 7);
+  if ($days <= 0) {
+    return;
+  }
+
+  $before = \Drupal::time()->getRequestTime() - ($days * 86400);
+  \Drupal::service('db_audit.storage')->purge($before);
+}

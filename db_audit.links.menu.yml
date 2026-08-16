@@ -1,0 +1,11 @@
+db_audit.overview:
+  title: 'Auditoría de base de datos'
+  description: 'Consultas por ruta, atribución por módulo y hallazgos priorizados por impacto.'
+  route_name: db_audit.overview
+  parent: system.admin_reports
+
+db_audit.settings:
+  title: 'Auditoría de base de datos'
+  description: 'Umbrales de detección, retención y cabeceras de diagnóstico.'
+  route_name: db_audit.settings
+  parent: system.admin_config_development

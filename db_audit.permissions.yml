@@ -1,0 +1,9 @@
+'view db audit reports':
+  title: 'Ver los informes de auditoría de base de datos'
+  description: 'Permite consultar las consultas capturadas, incluidos fragmentos de SQL y rutas de ficheros del sitio.'
+  restrict access: true
+
+'administer db audit':
+  title: 'Administrar la auditoría de base de datos'
+  description: 'Permite cambiar umbrales, medir la latencia y purgar los datos capturados.'
+  restrict access: true

@@ -1,0 +1,482 @@
+<?php
+
+/**
+ * @file
+ * Esquema y comprobaciones de estado del módulo Database Audit.
+ */
+
+declare(strict_types=1);
+
+use Drupal\Core\Database\Database;
+use Drupal\db_audit\Storage\AuditStorage;
+
+/**
+ * Implements hook_schema().
+ */
+function db_audit_schema(): array {
+  $schema = [];
+
+  $schema['db_audit_request'] = [
+    'description' => 'Un registro agregado por request auditado.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'request_id' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'description' => 'Identificador del request, para enlazar con las queries.',
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'run_tag' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+        'description' => 'Etiqueta de la corrida de carga, para comparar antes y después.',
+      ],
+      'sapi' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'hostname' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Host o contenedor que atendió el request.',
+      ],
+      'route' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Nombre de ruta de Drupal; es la unidad de agregación.',
+      ],
+      'path' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'method' => [
+        'type' => 'varchar',
+        'length' => 10,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'status' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'uid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'is_authenticated' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'total_queries' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'distinct_queries' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'total_db_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'network_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Estimación del tiempo en round-trips: consultas x RTT.',
+      ],
+      'connect_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'connect_count' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'wall_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'peak_memory' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'error_count' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'saving_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Suma de milisegundos estimados como recuperables.',
+      ],
+      'truncated' => [
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'request_id' => ['request_id'],
+      'route_created' => ['route', 'created'],
+      'created' => ['created'],
+      'run_tag' => ['run_tag'],
+      'total_queries' => ['total_queries'],
+    ],
+  ];
+
+  $schema['db_audit_query'] = [
+    'description' => 'Consultas agregadas por huella y punto de llamada dentro de un request.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'request_id' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'route' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'run_tag' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+      ],
+      'fingerprint' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'sql' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ],
+      'operation' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'tables' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'caller_file' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'caller_line' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'caller_class' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'caller_function' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'module' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'target' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'exec_count' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'time_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'max_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'min_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'rows_total' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'duplicates' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'errors' => [
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'request_id' => ['request_id'],
+      'fingerprint' => ['fingerprint'],
+      'module' => ['module'],
+      'route_created' => ['route', 'created'],
+      'exec_count' => ['exec_count'],
+      'created' => ['created'],
+    ],
+  ];
+
+  $schema['db_audit_finding'] = [
+    'description' => 'Hallazgos del analizador, priorizados por milisegundos recuperables.',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'request_id' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ],
+      'created' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'route' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'run_tag' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => FALSE,
+      ],
+      'type' => [
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'severity' => [
+        'type' => 'varchar',
+        'length' => 16,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'title' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'detail' => [
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => FALSE,
+      ],
+      'saving_ms' => [
+        'type' => 'float',
+        'size' => 'big',
+        'not null' => TRUE,
+        'default' => 0,
+      ],
+      'fingerprint' => [
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'module' => [
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+      'caller' => [
+        'type' => 'varchar',
+        'length' => 512,
+        'not null' => TRUE,
+        'default' => '',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'request_id' => ['request_id'],
+      'type_severity' => ['type', 'severity'],
+      'module' => ['module'],
+      'saving_ms' => ['saving_ms'],
+      'created' => ['created'],
+      'run_tag' => ['run_tag'],
+    ],
+  ];
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ */
+function db_audit_install(): void {
+  // Cuando el almacenamiento va a una conexión separada, hook_schema() sólo
+  // ha creado las tablas en la conexión por defecto. Se replican allí.
+  AuditStorage::ensureSchema();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function db_audit_uninstall(): void {
+  AuditStorage::dropSchema();
+  \Drupal::state()->deleteMultiple([
+    'db_audit.rtt_ns',
+    'db_audit.rtt_measured',
+    'db_audit.rtt_samples',
+    'db_audit.run_tag',
+  ]);
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function db_audit_requirements(string $phase): array {
+  $requirements = [];
+
+  if ($phase !== 'runtime') {
+    return $requirements;
+  }
+
+  $options = Database::getConnectionInfo('default')['default'] ?? [];
+  $driver = $options['driver'] ?? '';
+
+  // El módulo no captura nada mientras settings.php no apunte al driver
+  // instrumentado; conviene que eso se vea de un vistazo.
+  if ($driver !== 'auditmysql') {
+    $requirements['db_audit_driver'] = [
+      'title' => t('Database Audit: driver'),
+      'value' => t('Inactivo (driver actual: %driver)', ['%driver' => $driver ?: t('desconocido')]),
+      'description' => t('La captura de consultas no está activa. Configura el driver instrumentado en settings.php siguiendo el README del módulo.'),
+      'severity' => REQUIREMENT_WARNING,
+    ];
+  }
+  else {
+    $requirements['db_audit_driver'] = [
+      'title' => t('Database Audit: driver'),
+      'value' => t('Activo (auditmysql)'),
+      'description' => t('IMPORTANTE: mientras settings.php apunte a este driver, el módulo no se puede desinstalar ni borrar sin dejar el sitio sin arrancar.'),
+      'severity' => REQUIREMENT_INFO,
+    ];
+  }
+
+  // Prepares emulados: afecta al número de round-trips por consulta.
+  if (isset($options['pdo'][\PDO::ATTR_EMULATE_PREPARES]) && !$options['pdo'][\PDO::ATTR_EMULATE_PREPARES]) {
+    $requirements['db_audit_prepares'] = [
+      'title' => t('Database Audit: prepares'),
+      'value' => t('PDO::ATTR_EMULATE_PREPARES desactivado'),
+      'description' => t('Cada consulta cuesta dos round-trips en lugar de uno. Con la base de datos en otra zona de disponibilidad, esto duplica el coste de red de todo el sitio.'),
+      'severity' => REQUIREMENT_ERROR,
+    ];
+  }
+
+  // Latencia medida.
+  $rtt_ns = (int) \Drupal::state()->get('db_audit.rtt_ns', 0);
+  $requirements['db_audit_rtt'] = [
+    'title' => t('Database Audit: latencia a la base de datos'),
+    'value' => $rtt_ns > 0
+      ? t('@ms ms de RTT', ['@ms' => number_format($rtt_ns / 1e6, 3)])
+      : t('Sin medir'),
+    'description' => $rtt_ns > 0
+      ? t('Medición usada para estimar qué parte del tiempo es red y cuánto se puede recuperar.')
+      : t('Ejecuta <code>drush db-audit:rtt</code> para poder separar el tiempo de red del de ejecución.'),
+    'severity' => $rtt_ns > 0 ? REQUIREMENT_OK : REQUIREMENT_WARNING,
+  ];
+
+  return $requirements;
+}

@@ -1,0 +1,22 @@
+services:
+  db_audit.storage:
+    class: Drupal\db_audit\Storage\AuditStorage
+    arguments: ['@config.factory', '@state', '@datetime.time']
+
+  db_audit.analyzer:
+    class: Drupal\db_audit\Analysis\Analyzer
+    arguments: ['@config.factory', '@state']
+
+  db_audit.flusher:
+    class: Drupal\db_audit\AuditFlusher
+    arguments: ['@db_audit.analyzer', '@db_audit.storage', '@config.factory']
+
+  db_audit.diagnostics:
+    class: Drupal\db_audit\Diagnostics\ConnectionDiagnostics
+    arguments: ['@database', '@state']
+
+  db_audit.subscriber:
+    class: Drupal\db_audit\EventSubscriber\AuditSubscriber
+    arguments: ['@db_audit.flusher', '@config.factory', '@current_route_match', '@current_user', '@state']
+    tags:
+      - { name: event_subscriber }

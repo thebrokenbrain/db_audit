@@ -1,0 +1,34 @@
+db_audit.settings:
+  type: config_object
+  label: 'Configuración de Database Audit'
+  mapping:
+    n_plus_one_threshold:
+      type: integer
+      label: 'Umbral de repeticiones para considerar N+1'
+    slow_query_ms:
+      type: integer
+      label: 'Umbral de consulta lenta en milisegundos'
+    high_query_count:
+      type: integer
+      label: 'Umbral de consultas por request'
+    large_resultset:
+      type: integer
+      label: 'Umbral de filas devueltas'
+    store_queries:
+      type: boolean
+      label: 'Guardar el detalle de consultas'
+    max_stored_queries:
+      type: integer
+      label: 'Máximo de consultas guardadas por request'
+    min_queries_to_store:
+      type: integer
+      label: 'Mínimo de consultas para guardar un request'
+    expose_headers:
+      type: boolean
+      label: 'Publicar cabeceras de diagnóstico'
+    retention_days:
+      type: integer
+      label: 'Días de retención'
+    exclude_own_routes:
+      type: boolean
+      label: 'Excluir las rutas del propio módulo'
